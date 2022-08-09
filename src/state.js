@@ -1,9 +1,13 @@
+import { compileToFunction } from "./compiler/parse"
 import { observe } from "./observe/index"
 
 export function initState(vm) {
     const opts = vm.$options
     if (opts.data) {
         initData(vm)
+        debugger
+        let template = document.getElementById("app").innerHTML
+        compileToFunction(template)
     }
 }
 
