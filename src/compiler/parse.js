@@ -1,6 +1,6 @@
 const ncname = `[a-zA-Z_][\\-\\.0-9_a-zA-Z]*`
 const qnameCapture = `((?:${ncname}\\:)?${ncname})`
-const startTagOpen = new RegExp(`^<\\/${qnameCapture}[^>]*>`)
+const startTagOpen = new RegExp(`^<${qnameCapture}`)
 const endTag = new RegExp(`^<\\/${qnameCapture}[^>]*>`)
 const attribute = /^\s*([^\s"'<>\/=]+)(?:\s*(=)\s*(?:"([^"]*)"+|'([^']*)'+|([^\s""=<>`]+)))?/
 const startTagClose = /^\s*(\/?)>/
@@ -11,6 +11,42 @@ const defaultTagRE = /\{\{((?:.|\r?\n)+?)\}\}/g
 // 对模板进行编译处理
 
 function parseHTML(html) {
+    const ELEMENT_TYPE = 1
+    const TEXT_TYPE = 3
+    const stack = []
+    let currentParent;
+    let root;
+    function createASTElement(tag, attrs) {
+        return {
+            tag,
+            type:ELEMENT_TYPE,
+            children:[],
+            attrs,
+            parent:null
+        }
+    }
+    function start (tag, attrs) {
+       let node = createASTElement(tag, attrs)
+       if ( !root ) {
+           root = node
+       }
+       if (currentParent) {
+           node.parent = currentParent
+       }
+       stack.push(node)
+       currentParent = node
+    }
+
+    function chars (text) {
+        currentParent.children.push({
+            type: TEXT_TYPE,
+            text
+        })
+    }
+    function end (tag) {
+       stack.pop()
+       currentParent = stack.slice[-1][0]
+    }
     function advance(n) {
         html = html.substring(n)
     }
@@ -39,6 +75,7 @@ function parseHTML(html) {
         return false
     }
     while(html) {
+        debugger
         let textEnd = html.indexOf('<');
         if (textEnd === 0) {
             const startTagMatch = parseStartTag();

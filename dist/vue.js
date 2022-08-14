@@ -6,7 +6,7 @@
 
     const ncname = `[a-zA-Z_][\\-\\.0-9_a-zA-Z]*`;
     const qnameCapture = `((?:${ncname}\\:)?${ncname})`;
-    const startTagOpen = new RegExp(`^<\\/${qnameCapture}[^>]*>`);
+    const startTagOpen = new RegExp(`^<${qnameCapture}`);
     const endTag = new RegExp(`^<\\/${qnameCapture}[^>]*>`);
     const attribute = /^\s*([^\s"'<>\/=]+)(?:\s*(=)\s*(?:"([^"]*)"+|'([^']*)'+|([^\s""=<>`]+)))?/;
     const startTagClose = /^\s*(\/?)>/;
@@ -16,6 +16,30 @@
     // 对模板进行编译处理
 
     function parseHTML(html) {
+        const ELEMENT_TYPE = 1;
+        const stack = [];
+        let currentParent;
+        function createASTElement(tag, attrs) {
+            return {
+                tag,
+                type:ELEMENT_TYPE,
+                children:[],
+                attrs,
+                parent:null
+            }
+        }
+        function start (tag, attrs) {
+           let node = createASTElement(tag, attrs);
+           if (currentParent) {
+               node.parent = currentParent;
+           }
+           stack.push(node);
+           currentParent = node;
+        }
+        function end (tag) {
+           stack.pop();
+           currentParent = stack.slice[-1][0];
+        }
         function advance(n) {
             html = html.substring(n);
         }
@@ -44,6 +68,7 @@
             return false
         }
         while(html) {
+            debugger
             let textEnd = html.indexOf('<');
             if (textEnd === 0) {
                 const startTagMatch = parseStartTag();
@@ -161,9 +186,6 @@
         const opts = vm.$options;
         if (opts.data) {
             initData(vm);
-            debugger
-            let template = document.getElementById("app").innerHTML;
-            compileToFunction(template);
         }
     }
 
@@ -199,6 +221,30 @@
             const vm = this;
             vm.$options = options;
             initState(vm);
+            if (options.el) {
+                vm.$mount(options.el);
+            }
+        };
+        Vue.prototype.$mount = function (el) {
+            const vm = this;
+            el = document.querySelector(el);
+            let ops = vm.$options;
+            // 先判断有没有render函数
+            if (!ops.render) {
+                let template;
+                if (!ops.template && el) {
+                    template = el.outerHTML;
+                } else {
+                    if (el) {
+                        template = ops.template;
+                    }
+                }
+                if (template) {
+                    const render = compileToFunction(template);
+                    ops.render = render;
+                }
+            }
+            ops.render;
         };
     }
 

@@ -10,7 +10,7 @@
 
 <body>
     <div id="app">
-        <div>
+        <div style="color:red">
             {{name}}
         </div>
         <span>{{age}}</span>
@@ -26,10 +26,10 @@
                     num: 12
                 },
                 hobby: [1, 2, 3]
-            }
+            },
+            el: "#app"
         })
         console.log(vm)
-        console.log(vm.age)
         vm.hobby.push({
             addr: "123",
             num: 12

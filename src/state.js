@@ -5,9 +5,6 @@ export function initState(vm) {
     const opts = vm.$options
     if (opts.data) {
         initData(vm)
-        debugger
-        let template = document.getElementById("app").innerHTML
-        compileToFunction(template)
     }
 }
 
