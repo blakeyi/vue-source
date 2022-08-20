@@ -1,4 +1,3 @@
-import { compileToFunction } from "./compiler/parse"
 import { observe } from "./observe/index"
 
 export function initState(vm) {

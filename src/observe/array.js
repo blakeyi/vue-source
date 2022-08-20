@@ -17,7 +17,6 @@ let methods = [
 methods.forEach(method => {
     newArrayProto[method] = function(...args) {
         const result = oldArrayProto[method].call(this, ...args)
-        console.log(method, args)
         const ob = this.__ob__
         let inserts
         switch (method) {

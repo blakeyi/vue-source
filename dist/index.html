@@ -9,11 +9,11 @@
 </head>
 
 <body>
-    <div id="app">
+    <div id="app" style="width: 100px;color:green; " key="123">
         <div style="color:red">
-            {{name}}
+            {{name}}hello
         </div>
-        <span>{{age}}</span>
+        <span>{{age}}1111</span>
     </div>
     <script src="./vue.js"></script>
     <script>
@@ -29,7 +29,6 @@
             },
             el: "#app"
         })
-        console.log(vm)
         vm.hobby.push({
             addr: "123",
             num: 12

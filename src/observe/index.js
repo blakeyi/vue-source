@@ -22,11 +22,9 @@ export function defineReactive(target, key, value) {
     observe(value)
     Object.defineProperty(target, key, {
         get(){
-            console.log('get')
             return value
         },
         set(newVal) {
-            console.log(`set value,  old is: ${value}, new is: ${newVal}`)
             if (newVal = value) {
                 return
             }

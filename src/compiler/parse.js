@@ -1,16 +1,26 @@
-const ncname = `[a-zA-Z_][\\-\\.0-9_a-zA-Z]*`
-const qnameCapture = `((?:${ncname}\\:)?${ncname})`
-const startTagOpen = new RegExp(`^<${qnameCapture}`)
-const endTag = new RegExp(`^<\\/${qnameCapture}[^>]*>`)
-const attribute = /^\s*([^\s"'<>\/=]+)(?:\s*(=)\s*(?:"([^"]*)"+|'([^']*)'+|([^\s""=<>`]+)))?/
-const startTagClose = /^\s*(\/?)>/
-const defaultTagRE = /\{\{((?:.|\r?\n)+?)\}\}/g
+const ncname = `[a-zA-Z_][\\-\\.0-9_a-zA-Z]*`; //匹配标签名；形如 abc-123
+const qnameCapture = `((?:${ncname}\\:)?${ncname})`; //匹配特殊标签;形如 abc:234,前面的abc:可有可无；获取标签名；
+const startTagOpen = new RegExp(`^<${qnameCapture}`); // 匹配标签开头；形如  <  ；捕获里面的标签名
+const startTagClose = /^\s*(\/?)>/; // 匹配标签结尾，形如 >、/>
+const endTag = new RegExp(`^<\\/${qnameCapture}[^>]*>`); // 匹配结束标签 如 </abc-123> 捕获里面的标签名
+const attribute =
+  /^\s*([^\s"'<>\/=]+)(?:\s*(=)\s*(?:"([^"]*)"+|'([^']*)'+|([^\s"'=<>`]+)))?/; // 匹配属性  形如 id="app"
 
+
+// 主要思路:
+// 通过正则进行匹配开始,结束标签和属性内容以及文字内容,递归获取,构造成一棵树,树的结构如下
+// {
+//     tag,
+//     type:ELEMENT_TYPE,
+//     children:[],
+//     attrs,
+//     parent:null
+// }
 
 // vue3采用的不是正则
 // 对模板进行编译处理
 
-function parseHTML(html) {
+export function parseHTML(html) {
     const ELEMENT_TYPE = 1
     const TEXT_TYPE = 3
     const stack = []
@@ -32,20 +42,22 @@ function parseHTML(html) {
        }
        if (currentParent) {
            node.parent = currentParent
+           currentParent.children.push(node)
        }
        stack.push(node)
        currentParent = node
     }
 
     function chars (text) {
-        currentParent.children.push({
+        text = text.replace(/\s/g, "")
+        text && currentParent.children.push({
             type: TEXT_TYPE,
             text
         })
     }
     function end (tag) {
        stack.pop()
-       currentParent = stack.slice[-1][0]
+       currentParent = stack[stack.length - 1]
     }
     function advance(n) {
         html = html.substring(n)
@@ -75,7 +87,6 @@ function parseHTML(html) {
         return false
     }
     while(html) {
-        debugger
         let textEnd = html.indexOf('<');
         if (textEnd === 0) {
             const startTagMatch = parseStartTag();
@@ -93,16 +104,10 @@ function parseHTML(html) {
         if (textEnd > 0) {
             let text = html.substring(0, textEnd)
             if (text) {
+                chars(text)
                 advance(text.length)
             }
         }
     }
-    console.log(html)
-}
-
-export function compileToFunction(template) {
-    // 1. 将template转换为ast语法树
-    parseHTML(template)
-    // 2. 生成render方法,(返回虚拟dom)
-
+    return root
 }
