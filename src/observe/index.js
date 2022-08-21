@@ -1,4 +1,5 @@
 import { newArrayProto } from "./array"
+import Dep from "./dep"
 
 class Observer {
     constructor(data) {
@@ -8,34 +9,39 @@ class Observer {
         } else {
             this.walk(data)
         }
-        
+
     }
     walk(data) {
         Object.keys(data).forEach(key => defineReactive(data, key, data[key]))
     }
-    observeArray (arr) {
+    observeArray(arr) {
         arr.forEach(elem => observe(elem))
     }
 }
 
 export function defineReactive(target, key, value) {
     observe(value)
+    let dep = new Dep() // 每个属性都对应一个
     Object.defineProperty(target, key, {
-        get(){
+        get() {
+            if (Dep.target) {
+                dep.depend() //get时更新依赖
+            }
             return value
         },
         set(newVal) {
-            if (newVal = value) {
+            if (newVal === value) {
                 return
             }
             // 如果是对象的话需要重新代理
             observe(newVal)
             value = newVal
+            dep.notify() // set时通知更新
         }
     })
 }
 
-export function observe (data) {
+export function observe(data) {
     if (typeof data !== 'object' || data === null) {
         return
     }

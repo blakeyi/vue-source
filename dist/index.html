@@ -27,12 +27,18 @@
                 },
                 hobby: [1, 2, 3]
             },
-            el: "#app"
+            //el: "#app"
         })
         vm.hobby.push({
             addr: "123",
             num: 12
         })
+        vm.$mount("#app")
+        setTimeout(() => {
+            vm.name = "test"
+            vm.age = 11
+            vm._update(vm._render())
+        }, 1000)
     </script>
 </body>
 

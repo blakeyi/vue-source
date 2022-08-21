@@ -1,9 +1,10 @@
+import Watcher from "./observe/watcher";
 import { createElementVNode, createTextVNode } from "./vdom/index"
 
 
 
-function createElem (vnode) {
-    let {tag, data, children, text} = vnode
+function createElem(vnode) {
+    let { tag, data, children, text } = vnode
     if (typeof tag === 'string') {
         vnode.el = document.createElement(tag)
         patchProps(vnode.el, data)
@@ -29,33 +30,29 @@ function patchProps(el, props) {
     }
 }
 
-function patch (oldVNode, vnode) {
+function patch(oldVNode, vnode) {
     const isRealElem = oldVNode.nodeType
     if (isRealElem) {
         // 初次渲染
         const elem = oldVNode
         const parentElem = elem.parentNode
         let newElem = createElem(vnode)
-        console.log(newElem)
         parentElem.insertBefore(newElem, elem.nextSibling)
         parentElem.removeChild(elem)
+        return newElem
     } else {
         // diff算法
     }
 }
-export function InitLifeCircle (Vue) {
+export function InitLifeCircle(Vue) {
     Vue.prototype._update = function (vnode) {
-        
         const vm = this
         const el = vm.$el
         console.log('update', vnode, el)
-
-
         // patch既有初始化功能又有更新功能
-        patch(el, vnode)
+        vm.$el = patch(el, vnode)
     }
     Vue.prototype._render = function () {
-
         const vm = this
         return vm.$options.render.call(vm)
     }
@@ -74,5 +71,9 @@ export function InitLifeCircle (Vue) {
 }
 export function mountComponent(vm, el) {
     vm.$el = el
-    vm._update(vm._render())
+    const updateComponent = () => {
+        vm._update(vm._render())
+    }
+    // 一个组件对应一个watcher
+    new Watcher(vm, updateComponent, true)
 }

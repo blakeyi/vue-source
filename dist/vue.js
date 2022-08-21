@@ -120,7 +120,7 @@
 
   const defaultTagRE = /\{\{((?:.|\r?\n)+?)\}\}/g;
 
-  function genProps (attrs) {
+  function genProps(attrs) {
       let str = '';
       for (let i = 0; i < attrs.length; i++) {
           const attr = attrs[i];
@@ -133,7 +133,7 @@
               attr.value = obj;
           }
           str += `${attr.name}:${JSON.stringify(attr.value)},`;
-          
+
       }
       return `{${str.slice(0, -1)}}` // 删除结尾的逗号
   }
@@ -168,11 +168,11 @@
       }
   }
 
-  function genChildren (children) {
+  function genChildren(children) {
       return children.map(child => gen(child)).join(',')
   }
 
-  function codeGen(ast){
+  function codeGen(ast) {
       let children = genChildren(ast.children);
       let code = (`_c('${ast.tag}',${ast.attrs.length > 0 ? genProps(ast.attrs) : 'null'}
     ${ast.children.length ? `,${children}` : ''})`);
@@ -187,7 +187,65 @@
       let code = codeGen(ast);
       code = `with(this){return ${code}}`;
       let render = new Function(code);
+      console.log(render);
       return render
+  }
+
+  let id$1 = 0;
+
+  class Dep {
+      constructor() {
+          this.id = id$1++;
+          this.subs = []; // 存放当前属性对应的watcher
+      }
+      depend() {
+          Dep.target.addDep(this);
+      }
+
+      addSub(watcher) {
+          this.subs.push(watcher);
+      }
+
+      notify() {
+          this.subs.forEach(watcher => {
+              watcher.update();
+          });
+      }
+  }
+
+  Dep.target = null;
+
+  let id = 0;
+
+  // 每个属性有一个dep, 存储了对应的watcher, 属性变化了会遍历了其对应的所有观察者进行更新
+  class Watcher {
+      constructor(vm, fn, options) {
+          this.id = id++;
+          this.getter = fn;
+          this.renderWatcher = options;
+          this.deps = [];
+          this.depsID = new Set();
+          this.get();
+      }
+
+      get() {
+          Dep.target = this;
+          this.getter();
+          Dep.target = null;
+      }
+
+      addDep(dep) {
+          let id = dep.id;
+          if (!this.depsID.has(id)) {
+              this.deps.push(dep);
+              this.depsID.add(id);
+              dep.addSub(this);
+          }
+      }
+
+      update() {
+          this.get();
+      }
   }
 
   function createElementVNode(vm, tag, data, ...children) {
@@ -216,8 +274,8 @@
       }
   }
 
-  function createElem (vnode) {
-      let {tag, data, children, text} = vnode;
+  function createElem(vnode) {
+      let { tag, data, children, text } = vnode;
       if (typeof tag === 'string') {
           vnode.el = document.createElement(tag);
           patchProps(vnode.el, data);
@@ -243,31 +301,27 @@
       }
   }
 
-  function patch (oldVNode, vnode) {
+  function patch(oldVNode, vnode) {
       const isRealElem = oldVNode.nodeType;
       if (isRealElem) {
           // 初次渲染
           const elem = oldVNode;
           const parentElem = elem.parentNode;
           let newElem = createElem(vnode);
-          console.log(newElem);
           parentElem.insertBefore(newElem, elem.nextSibling);
           parentElem.removeChild(elem);
+          return newElem
       }
   }
-  function InitLifeCircle (Vue) {
+  function InitLifeCircle(Vue) {
       Vue.prototype._update = function (vnode) {
-          
           const vm = this;
           const el = vm.$el;
           console.log('update', vnode, el);
-
-
           // patch既有初始化功能又有更新功能
-          patch(el, vnode);
+          vm.$el = patch(el, vnode);
       };
       Vue.prototype._render = function () {
-
           const vm = this;
           return vm.$options.render.call(vm)
       };
@@ -286,7 +340,11 @@
   }
   function mountComponent(vm, el) {
       vm.$el = el;
-      vm._update(vm._render());
+      const updateComponent = () => {
+          vm._update(vm._render());
+      };
+      // 一个组件对应一个watcher
+      new Watcher(vm, updateComponent, true);
   }
 
   let oldArrayProto = Array.prototype;
@@ -334,34 +392,39 @@
           } else {
               this.walk(data);
           }
-          
+
       }
       walk(data) {
           Object.keys(data).forEach(key => defineReactive(data, key, data[key]));
       }
-      observeArray (arr) {
+      observeArray(arr) {
           arr.forEach(elem => observe(elem));
       }
   }
 
   function defineReactive(target, key, value) {
       observe(value);
+      let dep = new Dep(); // 每个属性都对应一个
       Object.defineProperty(target, key, {
-          get(){
+          get() {
+              if (Dep.target) {
+                  dep.depend(); //get时更新依赖
+              }
               return value
           },
           set(newVal) {
-              if (newVal = value) {
+              if (newVal === value) {
                   return
               }
               // 如果是对象的话需要重新代理
               observe(newVal);
               value = newVal;
+              dep.notify(); // set时通知更新
           }
       });
   }
 
-  function observe (data) {
+  function observe(data) {
       if (typeof data !== 'object' || data === null) {
           return
       }
