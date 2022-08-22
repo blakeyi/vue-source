@@ -3,6 +3,7 @@ import Dep from "./dep"
 
 class Observer {
     constructor(data) {
+        // 如果是数组,需要重写原型,用于拦截其内置方法
         if (Array.isArray(data)) {
             data.__ob__ = this
             data.__proto__ = newArrayProto // 使用重写后的原型

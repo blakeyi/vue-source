@@ -16,7 +16,9 @@
         <span>{{age}}1111</span>
     </div>
     <script src="./vue.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script> -->
     <script>
+        console.log(Vue.prototype)
         const vm = new Vue({
             data: {
                 name: "blakeyi",
@@ -34,11 +36,11 @@
             num: 12
         })
         vm.$mount("#app")
-        setTimeout(() => {
-            vm.name = "test"
-            vm.age = 11
-            vm._update(vm._render())
-        }, 1000)
+        vm.$nextTick(() => {
+            console.log(app.innerHTML)
+        })
+
+
     </script>
 </body>
 

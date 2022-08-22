@@ -244,7 +244,76 @@
       }
 
       update() {
+          queueWatcher(this);
+      }
+
+      run() {
           this.get();
+      }
+  }
+
+  let queue = [];
+  let has = {};
+  let pending = false;
+
+  function flushSchedulerQueue() {
+      let flushQueue = queue.slice(0);
+      queue = [];
+      has = {};
+      pending = false;
+      flushQueue.forEach(q => q.run());
+  }
+
+  function queueWatcher(watcher) {
+      const id = watcher.id;
+      if (!has[id]) {
+          queue.push(watcher);
+          has[id] = true;
+          if (!pending) {
+              setTimeout(flushSchedulerQueue, 0);
+              pending = true;
+          }
+      }
+  }
+
+  let callbacks = [];
+  let waiting = false;
+  function flushCallbacks() {
+      let cbs = callbacks.slice(0);
+      waiting = false;
+      callbacks = [];
+      cbs.forEach(cb => cb());
+  }
+
+  let timeFunc;
+  if (Promise) {
+      timeFunc = () => {
+          Promise.resolve().then(flushCallbacks);
+      };
+  } else if (MutationObserver) {
+      let observer = new MutationObserver(flushCallbacks);
+      let textNode = document.createTextNode(1);
+      observer.observe(textNode, {
+          characterData: true
+      });
+      timeFunc = () => {
+          textNode.textContent = 2;
+      };
+  } else if (setImmediate) {
+      timeFunc = () => {
+          setImmediate(flushCallbacks);
+      };
+  } else {
+      timeFunc = () => {
+          setTimeout(flushCallbacks);
+      };
+  }
+
+  function nextTick(cb) {
+      callbacks.push(cb);
+      if (!waiting) {
+          timeFunc();
+          waiting = true;
       }
   }
 
@@ -386,6 +455,7 @@
 
   class Observer {
       constructor(data) {
+          // 如果是数组,需要重写原型,用于拦截其内置方法
           if (Array.isArray(data)) {
               data.__ob__ = this;
               data.__proto__ = newArrayProto; // 使用重写后的原型
@@ -464,7 +534,7 @@
   }
 
   function InitMixin(Vue) {
-      Vue.prototype._init = function(options){
+      Vue.prototype._init = function (options) {
           // 初始化数据
           const vm = this;
           vm.$options = options;
@@ -494,12 +564,13 @@
           }
           mountComponent(vm, el);
       };
+
+      Vue.prototype.$nextTick = nextTick;
   }
 
   function Vue(options) {
       this._init(options);
   }
-
   InitMixin(Vue);
   InitLifeCircle(Vue);
 

@@ -1,10 +1,11 @@
 import { compileToFunction } from "./compiler/index"
 import { mountComponent } from "./lifecircle"
+import { nextTick } from "./observe/watcher"
 import { initState } from "./state"
 
 
 export function InitMixin(Vue) {
-    Vue.prototype._init = function(options){
+    Vue.prototype._init = function (options) {
         // 初始化数据
         const vm = this
         vm.$options = options
@@ -34,4 +35,6 @@ export function InitMixin(Vue) {
         }
         mountComponent(vm, el)
     }
+
+    Vue.prototype.$nextTick = nextTick
 }
