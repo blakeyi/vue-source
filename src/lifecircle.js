@@ -77,3 +77,10 @@ export function mountComponent(vm, el) {
     // 一个组件对应一个watcher
     new Watcher(vm, updateComponent, true)
 }
+
+export function callHook(vm, hook) {
+    const handler = vm.$options[hook]
+    if (handler) {
+        handler.forEach(handler => handler.call(vm))
+    }
+}

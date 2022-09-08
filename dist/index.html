@@ -18,7 +18,7 @@
     <script src="./vue.js"></script>
     <!-- <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script> -->
     <script>
-        console.log(Vue.prototype)
+
         const vm = new Vue({
             data: {
                 name: "blakeyi",
@@ -29,17 +29,17 @@
                 },
                 hobby: [1, 2, 3]
             },
-            //el: "#app"
+            created() {
+                console.log('created2')
+            },
+            el: "#app"
         })
-        vm.hobby.push({
-            addr: "123",
-            num: 12
+        console.log(vm)
+        Vue.mixin({
+            created() {
+                console.log('created1')
+            }
         })
-        vm.$mount("#app")
-        vm.$nextTick(() => {
-            console.log(app.innerHTML)
-        })
-
 
     </script>
 </body>
