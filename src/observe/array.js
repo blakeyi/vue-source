@@ -1,6 +1,7 @@
 let oldArrayProto = Array.prototype
 
 
+// 继承原来Array的原型
 export let newArrayProto = Object.create(oldArrayProto)
 
 // 会改变原数组的方法
@@ -15,7 +16,7 @@ let methods = [
 ]
 
 methods.forEach(method => {
-    newArrayProto[method] = function(...args) {
+    newArrayProto[method] = function (...args) {
         const result = oldArrayProto[method].call(this, ...args)
         const ob = this.__ob__
         let inserts

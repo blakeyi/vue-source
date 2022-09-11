@@ -4,15 +4,13 @@ import { nextTick } from "./observe/watcher"
 import { initState } from "./state"
 import { mergeOptions } from "./utils"
 
-
 export function InitMixin(Vue) {
     Vue.prototype._init = function (options) {
         // 初始化数据
         const vm = this
-        console.log(this)
-        debugger
+        // 这里拿到 vm.constructor其实就是vm.__proto__.constructor 就是 Vue的原始函数
+        // 实例的__proto__执行构造函数的原型, 而原型的constructor重新指回构造函数
         vm.$options = mergeOptions(vm.constructor.options, options)
-        vm.$options = options
         console.log(vm.$options)
         callHook(vm, 'beforeCreate')
         initState(vm)

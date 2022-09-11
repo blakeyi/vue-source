@@ -1,5 +1,7 @@
 let id = 0
 
+// id相当于全局静态变量, 不过只在当前文件生效
+// 每次new Dep的时候都会取新的id值
 class Dep {
     constructor() {
         this.id = id++

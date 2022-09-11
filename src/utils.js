@@ -7,7 +7,7 @@ LIFECIRCLE.forEach(hook => {
     strategie[hook] = function (parent, child) {
         if (child) {
             if (parent) {
-                return parent.concate(child)
+                return parent.concat(child)
             } else {
                 return [child]
             }
@@ -27,6 +27,7 @@ export function mergeOptions(parent, child) {
         }
     }
 
+
     function mergeField(key) {
         if (strategie[key]) {
             options[key] = strategie[key](parent[key], child[key])
@@ -34,4 +35,6 @@ export function mergeOptions(parent, child) {
             options[key] = child[key] || parent[key] // 优先用儿子的
         }
     }
+
+    return options
 }

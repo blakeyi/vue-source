@@ -21,8 +21,10 @@ class Observer {
 }
 
 export function defineReactive(target, key, value) {
+    // 如果是对象,继续遍历其属性
     observe(value)
-    let dep = new Dep() // 每个属性都对应一个
+    // 每个属性都对应一个
+    let dep = new Dep()
     Object.defineProperty(target, key, {
         get() {
             if (Dep.target) {
