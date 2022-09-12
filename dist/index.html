@@ -14,10 +14,26 @@
             {{name}}hello
         </div>
         <span>{{age}}1111</span>
+        <my-button></my-button>
     </div>
     <script src="./vue.js"></script>
     <!-- <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script> -->
     <script>
+        // let Sub = Vue.extend({
+        //     template: '<div>子组件 <my-button> </my-button></div>',
+        //     component: {
+        //         'my-button': {
+        //             template: "<button>全局button</button>"
+        //         }
+        //     }
+        // })
+
+        // new Sub().$mount("#root")
+
+        Vue.component('my-button', {
+            template: '<div>子组件 <button>点我呀</button></div>'
+        })
+
         const vm = new Vue({
             data: {
                 name: "blakeyi",

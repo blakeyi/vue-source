@@ -15,7 +15,7 @@ export function InitMixin(Vue) {
         callHook(vm, 'beforeCreate')
         initState(vm)
         callHook(vm, 'created')
-        if (options.el) {
+        if (vm.$options.el) {
             vm.$mount(options.el)
         }
     }
@@ -25,7 +25,7 @@ export function InitMixin(Vue) {
         let ops = vm.$options
         // 先判断有没有render函数
         if (!ops.render) {
-            let template;
+            let template = ops.template;
             if (!ops.template && el) {
                 template = el.outerHTML
             } else {

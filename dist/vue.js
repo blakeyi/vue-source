@@ -38,6 +38,17 @@
         };
     });
 
+    strategie.components = function (parentVal, childVal) {
+        const res = Object.create(parentVal);
+        if (childVal) {
+            for (let key in childVal) {
+                res[key] = childVal[key];
+            }
+        }
+
+        return res
+    };
+
     function mergeOptions(parent, child) {
         const options = [];
         for (let key in parent) {
@@ -61,6 +72,18 @@
         return options
     }
 
+    function initExtend(Vue) {
+        Vue.extend = function (options) {
+            function Sub(options = {}) {
+                this._init(options);
+            }
+            Sub.prototype = Object.create(Vue.prototype);
+            Sub.prototype.constructor = Sub;
+            Sub.options = mergeOptions(Vue.options, options);
+            return Sub
+        };
+    }
+
     function initMixin(Vue) {
         Vue.mixin = function (mixin) {
             // this 指向 VUe，this.options即Vue.options
@@ -78,7 +101,10 @@
             Vue.options[type + "s"] = {};
         });
         Vue.options._base = Vue;
+
+        initExtend(Vue);
         initAssetRegisters(Vue);
+
     }
 
     const ncname = `[a-zA-Z_][\\-\\.0-9_a-zA-Z]*`; //匹配标签名；形如 abc-123
@@ -396,6 +422,10 @@
         }
     }
 
+    const isReservedTag = (tag) => {
+        return ['a', 'div', 'span', 'p', 'li', 'ul', 'button'].includes(tag)
+    };
+
     function createElementVNode(vm, tag, data, ...children) {
         if (data == null) {
             data = {};
@@ -404,25 +434,52 @@
         if (key) {
             delete data.key;
         }
-        return vnode(vm, tag, key, data, children)
+        if (isReservedTag(tag)) {
+            return vnode(vm, tag, key, data, children)
+        } else {
+            // 组件的tag, 创建一个组件的虚拟节点
+            let ctor = vm.$options.components[tag];
+            return createComponentVNode(vm, tag, key, data, children, ctor)
+
+        }
+
+    }
+
+    function createComponentVNode(vm, tag, key, data, children, ctor) {
+        if (typeof ctor === 'object') {
+            ctor = vm.$options._base.extend(ctor);
+        }
+        data.hook = {
+            init(vnode) {
+                let inst = vnode.componentInstance = new vnode.componentOptions.ctor;
+                inst.$mount();
+            }
+        };
+        return vnode(vm, tag, key, data, children, null, { ctor })
     }
 
     function createTextVNode(vm, text) {
         return vnode(vm, undefined, undefined, undefined, undefined, text)
     }
 
-    function vnode(vm, tag, key, data, children, text) {
+    function vnode(vm, tag, key, data, children, text, componentOptions) {
         return {
             vm,
             tag,
             key,
             data,
             children,
-            text
+            text,
+            componentOptions
         }
     }
 
     function patch(oldVNode, vnode, vm) {
+        if (!oldVNode) {
+            // 组件的渲染
+            return createElem(vnode);
+        }
+
         const isRealElem = oldVNode.nodeType;
         if (isRealElem) {
             // 初次渲染
@@ -438,9 +495,26 @@
         }
     }
 
+
+    function createComponent(vnode) {
+        let i = vnode.data;
+        if ((i = i.hook) && (i = i.init)) {
+            i(vnode);
+        }
+        if (vnode.componentInstance) {
+            return true
+        }
+        return false
+    }
+
     function createElem(vnode) {
         let { tag, data, key, children, text } = vnode;
         if (typeof tag === 'string') {
+
+            if (createComponent(vnode)) {
+                return vnode.componentInstance.$el
+            }
+
             vnode.el = document.createElement(tag);
             updateProperties(vnode);
             children.forEach(child => {
@@ -636,6 +710,7 @@
             // patch既有初始化功能又有更新功能
 
             const preVNode = vm._vnode;
+            debugger
             vm._vnode = vnode;
             if (preVNode) {
                 vm.$el = patch(preVNode, vnode);
@@ -644,6 +719,7 @@
             }
 
         };
+
         Vue.prototype._render = function () {
             const vm = this;
             return vm.$options.render.call(vm)
@@ -812,7 +888,7 @@
             callHook(vm, 'beforeCreate');
             initState(vm);
             callHook(vm, 'created');
-            if (options.el) {
+            if (vm.$options.el) {
                 vm.$mount(options.el);
             }
         };
@@ -822,7 +898,7 @@
             let ops = vm.$options;
             // 先判断有没有render函数
             if (!ops.render) {
-                let template;
+                let template = ops.template;
                 if (!ops.template && el) {
                     template = el.outerHTML;
                 } else {

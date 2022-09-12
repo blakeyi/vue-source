@@ -16,6 +16,17 @@ LIFECIRCLE.forEach(hook => {
     }
 })
 
+strategie.components = function (parentVal, childVal) {
+    const res = Object.create(parentVal)
+    if (childVal) {
+        for (let key in childVal) {
+            res[key] = childVal[key]
+        }
+    }
+
+    return res
+}
+
 export function mergeOptions(parent, child) {
     const options = []
     for (let key in parent) {

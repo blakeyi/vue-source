@@ -1,4 +1,9 @@
 export function patch(oldVNode, vnode, vm) {
+    if (!oldVNode) {
+        // 组件的渲染
+        return createElem(vnode);
+    }
+
     const isRealElem = oldVNode.nodeType
     if (isRealElem) {
         // 初次渲染
@@ -14,9 +19,26 @@ export function patch(oldVNode, vnode, vm) {
     }
 }
 
+
+function createComponent(vnode) {
+    let i = vnode.data
+    if ((i = i.hook) && (i = i.init)) {
+        i(vnode)
+    }
+    if (vnode.componentInstance) {
+        return true
+    }
+    return false
+}
+
 function createElem(vnode) {
     let { tag, data, key, children, text } = vnode
     if (typeof tag === 'string') {
+
+        if (createComponent(vnode)) {
+            return vnode.componentInstance.$el
+        }
+
         vnode.el = document.createElement(tag)
         updateProperties(vnode)
         children.forEach(child => {

@@ -11,6 +11,7 @@ export function InitLifeCircle(Vue) {
         // patch既有初始化功能又有更新功能
 
         const preVNode = vm._vnode
+        debugger
         vm._vnode = vnode
         if (preVNode) {
             vm.$el = patch(preVNode, vnode, vm)
@@ -19,6 +20,7 @@ export function InitLifeCircle(Vue) {
         }
 
     }
+
     Vue.prototype._render = function () {
         const vm = this
         return vm.$options.render.call(vm)

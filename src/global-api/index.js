@@ -1,4 +1,5 @@
 import initAssetRegisters from "./asset";
+import { initExtend } from "./component";
 import { ASSETS_TYPE } from "./const"
 import initMixin from "./mixin";
 
@@ -10,5 +11,8 @@ export function InitGlobalAPI(Vue) {
         Vue.options[type + "s"] = {}
     })
     Vue.options._base = Vue;
+
+    initExtend(Vue)
     initAssetRegisters(Vue)
+
 }
